@@ -1,0 +1,47 @@
+# Nombre del flujo de trabajo que se muestra en la pestaña Actions de GitHub
+name: Actualizar README con Frase Diaria
+
+on:
+  # Disparadores del flujo
+  schedule:
+    # Programación cron para ejecutarse todos los días a las 12:00 PM UTC
+    - cron: '0 12 * * *' 
+  # Permite disparar el flujo de manera manual desde la interfaz de GitHub
+  workflow_dispatch: 
+
+jobs:
+  # Tarea única para actualizar el README
+  update-readme:
+    # Usa un entorno virtual de Ubuntu con la versión más reciente
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Paso 1: Descarga el código del repositorio para que el flujo pueda acceder a él
+      - name: Descargar repositorio (Checkout)
+        uses: actions/checkout@v3
+
+      # Paso 2: Instalación del entorno de ejecución Node.js versión 18
+      - name: Configurar Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      # Paso 3: Ejecución del script principal que selecciona la frase y modifica el README.md
+      - name: Ejecutar script de actualización
+        run: node update-quote.js
+
+      # Paso 4: Sincronización de los cambios con el repositorio remoto
+      - name: Guardar cambios (Commit y Push)
+        run: |
+          # Configura la identidad del bot encargado de realizar el commit
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Agrega el archivo modificado al área de preparación
+          git add README.md
+          
+          # Realiza el commit con un mensaje descriptivo; si no hay cambios, no genera error
+          git commit -m "Actualización automática: Frase del día" || echo "Sin cambios para confirmar"
+          
+          # Sube los cambios a la rama principal
+          git push

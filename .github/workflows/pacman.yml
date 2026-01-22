@@ -1,0 +1,48 @@
+# Nombre del flujo de trabajo: Generador de Animación Pacman para el gráfico de contribuciones
+name: Generar Animación Pacman
+
+on:
+  # Disparadores del flujo
+  schedule: 
+    # Se ejecuta automáticamente cada 12 horas para mantener la animación actualizada
+    - cron: "0 */12 * * *"
+  
+  # Permite ejecutar el flujo manualmente desde el panel de GitHub Actions
+  workflow_dispatch:
+
+  # Se ejecuta automáticamente cada vez que realizas un push a la rama principal (main)
+  push:
+    branches:
+      - main
+
+jobs:
+  # Tarea para generar los archivos SVG de la animación
+  generate:
+    # Otorga permisos de escritura para que el Action pueda guardar los archivos generados
+    permissions: 
+      contents: write
+    # Entorno virtual de ejecución
+    runs-on: ubuntu-latest
+    # Tiempo límite de ejecución para evitar procesos infinitos
+    timeout-minutes: 5
+
+    steps:
+      # Paso 1: Acción que analiza tu perfil y genera el archivo pacman-contribution-graph.svg
+      - name: Generar pacman-contribution-graph.svg
+        uses: abozanona/pacman-contribution-graph@main
+        with:
+          # Nombre del usuario propietario del repositorio (tú)
+          github_user_name: ${{ github.repository_owner }}
+
+      # Paso 2: Acción que sube el archivo generado a una rama especial llamada 'output'
+      # Esta rama se utiliza para servir la imagen sin ensuciar la rama principal
+      - name: Subir pacman-contribution-graph.svg a la rama 'output'
+        uses: crazy-max/ghaction-github-pages@v3.1.0
+        with:
+          # Rama destino para la imagen de salida
+          target_branch: output
+          # Directorio donde se guarda la imagen generada por el paso anterior
+          build_dir: dist
+        env:
+          # Token de autenticación de GitHub necesario para realizar el push
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
